@@ -381,7 +381,7 @@ describe("CdkBackend.build", () => {
       message: `updating CDK dependencies: @aws/agentcore-cdk 1.0.3 -> ${vended.dependencies["@aws/agentcore-cdk"]}`,
     });
     expect(subject.commands).toEqual([
-      { command: ["npm", "install"], cwd: cdkDirectory(input) },
+      { command: ["npm", "install", "--no-audit", "--no-fund"], cwd: cdkDirectory(input) },
       { command: synthCommand(input), cwd: cdkDirectory(input) },
     ]);
   });
@@ -721,7 +721,7 @@ describe("CdkBackend.deploy", () => {
       type: "step",
       message: "installing CDK dependencies (node_modules missing)",
     });
-    expect(commandsBeforeProvisioning).toEqual(["npm install"]);
+    expect(commandsBeforeProvisioning).toEqual(["npm install --no-audit --no-fund"]);
   });
 
   test("checks local CDK prerequisites before provisioning credentials", async () => {

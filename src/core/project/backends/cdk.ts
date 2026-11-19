@@ -12,6 +12,7 @@ import type {
 } from "../../../handlers/project/types";
 import { cdkCompatibilityWarning } from "./cdk/compatibility";
 import { syncCdkDependencies } from "./cdk/dependencies";
+import { declaresNothingDeployable } from "../spec";
 import { defaultSource, type AssetSource } from "../source";
 import {
   createLineSplitter,
@@ -295,10 +296,10 @@ export class CdkBackend implements ProjectBackend {
     // provisioned or the stack ARN unrecorded.
     // A project that declares nothing is about to have its stack removed, and a
     // dependency problem must not keep that from happening.
-    const declaresNothing = !Object.values(project.spec).some(
-      (value) => Array.isArray(value) && value.length > 0,
-    );
-    yield* this.ensureCdkDependencies(project, { ...input, lenient: declaresNothing });
+    yield* this.ensureCdkDependencies(project, {
+      ...input,
+      lenient: declaresNothingDeployable(project),
+    });
 
     // Read before provisioning rewrites the credentials map: it is the only record
     // of what this target provisioned, so it is the only way to find a provider whose
