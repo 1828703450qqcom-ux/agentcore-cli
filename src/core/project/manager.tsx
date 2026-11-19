@@ -6,6 +6,7 @@ import type {
   AddResourceOptions,
   AddResourceInput,
   CreateProjectInput,
+  BuildProjectInput,
   DeployProjectInput,
   DeployResult,
   EnvLocalEntry,
@@ -432,6 +433,7 @@ export class FsProjectManager implements ProjectManager {
         runner: config.runner,
         checkTool: config.checkTool,
         json: config.json,
+        source: this.assetSource,
       }),
     };
     this.templateRenderer = config.templateRenderer ?? new HandlebarsTemplateRenderer();
@@ -1477,14 +1479,17 @@ export class FsProjectManager implements ProjectManager {
     return { spec: result.spec, envEntries: result.envEntries ?? [] };
   }
 
-  public async *build(project: Project): AsyncGenerator<ProjectEvent, void> {
+  public async *build(
+    project: Project,
+    input: BuildProjectInput = {},
+  ): AsyncGenerator<ProjectEvent, void> {
     assertV1Project(project, "build");
     // Half-written project files from an interrupted `agentcore migrate` must not
     // be synced or synthesized; build has no target, so only that state stops it.
     await assertNoPendingMigration(project.rootPath);
     const synced = await this.syncRuntimeBuilds(project, { purpose: "deploy" });
     for (const message of synced.messages) yield { type: "step", message };
-    yield* this.backendFor(project).build(synced.project);
+    yield* this.backendFor(project).build(synced.project, input);
   }
 
   public async syncRuntimeBuilds(
@@ -1687,6 +1692,7 @@ export class FsProjectManager implements ProjectManager {
       confirmTeardown: input.confirmTeardown,
       transactionSearch: input.transactionSearch,
       skipBootstrap: input.skipBootstrap,
+      disableDependencyManagement: input.disableDependencyManagement,
     });
   }
 

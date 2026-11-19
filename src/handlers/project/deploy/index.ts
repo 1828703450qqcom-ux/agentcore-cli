@@ -129,6 +129,7 @@ export const createDeployProjectHandler = (config: DeployProjectHandlerConfig) =
         region: ctx.require(RegionKey),
         confirmTeardown,
         transactionSearch: globalConfig.transactionSearch,
+        disableDependencyManagement: globalConfig.disableDependencyManagement,
         skipBootstrap: flags["skip-bootstrap"],
       });
       // Progress goes to stderr, keeping stdout for machine output. --json

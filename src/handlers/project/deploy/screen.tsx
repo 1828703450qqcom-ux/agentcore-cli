@@ -117,6 +117,7 @@ function DeployConfirm({
           region,
           confirmTeardown: async () => teardown,
           transactionSearch: globalConfig?.transactionSearch,
+          disableDependencyManagement: globalConfig?.disableDependencyManagement,
         });
         // The title follows the result, not the preflight heuristic, which
         // synthesis can disagree with. Outputs are not listed: the command
