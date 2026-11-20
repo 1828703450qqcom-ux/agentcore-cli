@@ -1,8 +1,39 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import semver from "semver";
+import { createRequire } from "node:module";
+import { ProjectStateError } from "../../../../errors";
 
 export const MINIMUM_COMPATIBLE_CDK_VERSION = "1.0.0";
+
+/** Detect support directly so prereleases and local CDK packages also work. */
+export function assertCdkLocalContainerSupport(cdkDirectory: string): void {
+  try {
+    const require = createRequire(join(cdkDirectory, "package.json"));
+    const cdk = require("@aws/agentcore-cdk") as {
+      BuildTypeSchema?: { safeParse(value: string): { success: boolean } };
+      LocalContainerImageAsset?: unknown;
+    };
+    if (cdk.BuildTypeSchema?.safeParse("ContainerLocal").success && cdk.LocalContainerImageAsset)
+      return;
+  } catch (error) {
+    // A missing package falls through to "update the dependency". Anything else is a
+    // broken install, which that advice would hide.
+    const code = (error as { code?: unknown }).code;
+    if (code !== "MODULE_NOT_FOUND" && code !== "ERR_MODULE_NOT_FOUND") {
+      throw new ProjectStateError(
+        `Cannot load @aws/agentcore-cdk from ${cdkDirectory}: ` +
+          (error instanceof Error ? error.message : String(error)),
+        { cause: error },
+      );
+    }
+  }
+  // An old or unavailable package must never silently strip a harness build selection.
+  throw new ProjectStateError(
+    'This project requires an @aws/agentcore-cdk package that supports "ContainerLocal". ' +
+      `Update the dependency in ${cdkDirectory} and run npm install.`,
+  );
+}
 
 export async function cdkCompatibilityWarning(cdkDirectory: string): Promise<string | undefined> {
   const packagePath = join(cdkDirectory, "node_modules", "@aws", "agentcore-cdk", "package.json");
